@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kitoblar.uz - Online Kitob Do'koni</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--tg-theme-bg-color, #fff); color: var(--tg-theme-text-color, #000); padding: 16px; padding-bottom: 80px; }
+        .header { text-align: center; margin-bottom: 24px; padding: 16px 0; }
+        .header h1 { font-size: 24px; margin-bottom: 8px; }
+        .header p { color: var(--tg-theme-hint-color, #999); font-size: 14px; }
+        .categories { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 24px; }
+        .category-card { background: var(--tg-theme-secondary-bg-color, #f0f0f0); padding: 20px; border-radius: 12px; text-align: center; cursor: pointer; transition: transform 0.2s; }
+        .category-card:active { transform: scale(0.95); }
+        .category-icon { font-size: 32px; margin-bottom: 8px; }
+        .section-title { font-size: 20px; font-weight: bold; margin: 24px 0 16px; }
+        .books-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 24px; }
+        .book-card { background: var(--tg-theme-secondary-bg-color, #f0f0f0); border-radius: 12px; overflow: hidden; }
+        .book-image { width: 100%; height: 200px; object-fit: cover; background: #ddd; }
+        .book-info { padding: 12px; }
+        .book-title { font-size: 14px; font-weight: bold; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .book-author { font-size: 12px; color: var(--tg-theme-hint-color, #999); margin-bottom: 8px; }
+        .book-price { font-size: 16px; font-weight: bold; color: var(--tg-theme-button-color, #0088cc); margin-bottom: 8px; }
+        .old-price { font-size: 12px; color: var(--tg-theme-hint-color, #999); text-decoration: line-through; margin-left: 4px; }
+        .add-btn { width: 100%; background: var(--tg-theme-button-color, #0088cc); color: var(--tg-theme-button-text-color, #fff); border: none; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; }
+        .add-btn:active { opacity: 0.8; }
+        .cart-button { position: fixed; bottom: 16px; left: 16px; right: 16px; background: var(--tg-theme-button-color, #0088cc); color: var(--tg-theme-button-text-color, #fff); border: none; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100; }
+        .cart-count { background: rgba(255,255,255,0.3); padding: 4px 12px; border-radius: 20px; }
+        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; }
+        .modal.active { display: flex; align-items: center; justify-content: center; }
+        .modal-content { background: var(--tg-theme-bg-color, #fff); border-radius: 16px; padding: 24px; max-width: 400px; width: 90%; max-height: 80vh; overflow-y: auto; }
+        .modal-header { font-size: 20px; font-weight: bold; margin-bottom: 16px; }
+        .cart-item { display: flex; gap: 12px; margin-bottom: 12px; padding: 12px; background: var(--tg-theme-secondary-bg-color, #f0f0f0); border-radius: 8px; }
+        .cart-item-image { width: 60px; height: 80px; object-fit: cover; border-radius: 4px; }
+        .cart-item-info { flex: 1; }
+        .cart-item-title { font-size: 14px; font-weight: bold; margin-bottom: 4px; }
+        .cart-item-price { font-size: 14px; color: var(--tg-theme-button-color, #0088cc); font-weight: bold; }
+        .remove-btn { background: none; border: none; color: #ff3b30; font-size: 20px; cursor: pointer; padding: 0; width: 32px; height: 32px; }
+        .cart-total { border-top: 2px solid var(--tg-theme-secondary-bg-color, #f0f0f0); padding-top: 16px; margin-top: 16px; display: flex; justify-content: space-between; font-size: 18px; font-weight: bold; }
+        .form-group { margin-bottom: 16px; }
+        .form-label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 14px; }
+        .form-input { width: 100%; padding: 12px; border: 2px solid var(--tg-theme-secondary-bg-color, #f0f0f0); border-radius: 8px; font-size: 16px; background: var(--tg-theme-bg-color, #fff); color: var(--tg-theme-text-color, #000); }
+        .form-input:focus { outline: none; border-color: var(--tg-theme-button-color, #0088cc); }
+        .submit-btn { width: 100%; background: var(--tg-theme-button-color, #0088cc); color: var(--tg-theme-button-text-color, #fff); border: none; padding: 16px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 8px; }
+        .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .close-btn { width: 100%; background: var(--tg-theme-secondary-bg-color, #f0f0f0); color: var(--tg-theme-text-color, #000); border: none; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; margin-top: 8px; }
+        .empty-cart { text-align: center; padding: 40px 20px; color: var(--tg-theme-hint-color, #999); }
+        .success-message { text-align: center; padding: 40px 20px; }
+        .success-icon { font-size: 64px; margin-bottom: 16px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📚 Kitoblar.uz</h1>
+        <p>Eng yaxshi kitoblar tez yetkazib berish bilan</p>
+    </div>
+
+    <div class="categories">
+        <div class="category-card"><div class="category-icon">📚</div><div>Badiiy adabiyot</div></div>
+        <div class="category-card"><div class="category-icon">💼</div><div>Biznes va moliya</div></div>
+        <div class="category-card"><div class="category-icon">🎨</div><div>Bolalar kitoblari</div></div>
+        <div class="category-card"><div class="category-icon">🧠</div><div>Psixologiya</div></div>
+    </div>
+
+    <div class="section-title">📖 Eng ko'p sotilgan kitoblar</div>
+    <div class="books-grid" id="booksGrid"></div>
+
+    <button class="cart-button" id="cartBtn" style="display: none;">
+        <span>Savatni ko'rish</span>
+        <span class="cart-count" id="cartCount">0</span>
+    </button>
+
+    <div class="modal" id="cartModal">
+        <div class="modal-content">
+            <div class="modal-header">Savat</div>
+            <div id="cartItems"></div>
+            <div class="cart-total" id="cartTotal" style="display: none;">
+                <span>Jami:</span>
+                <span id="totalPrice">0 so'm</span>
+            </div>
+            <div id="checkoutForm" style="display: none;">
+                <div class="form-group">
+                    <label class="form-label">Ismingiz</label>
+                    <input type="text" class="form-input" id="nameInput" placeholder="Masalan: Ali Valiyev">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Telefon raqamingiz</label>
+                    <input type="tel" class="form-input" id="phoneInput" placeholder="+998 90 123 45 67">
+                </div>
+                <button class="submit-btn" id="submitBtn">Tasdiqlash</button>
+            </div>
+            <button class="close-btn" id="closeModalBtn">Yopish</button>
+        </div>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        const books = [
+            {id: 1, title: "O'tkan kunlar", author: "Abdulla Qodiriy", price: 45000, oldPrice: 60000, image: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=300&h=400&fit=crop"},
+            {id: 2, title: "Atom odatlar", author: "Jeyms Klir", price: 85000, oldPrice: 110000, image: "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=300&h=400&fit=crop"},
+            {id: 3, title: "Kichkina shahzoda", author: "Antuan de Sent-Ekzyuperi", price: 35000, oldPrice: null, image: "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=300&h=400&fit=crop"},
+            {id: 4, title: "Fikrlash san'ati", author: "Genrix Alders", price: 75000, oldPrice: 95000, image: "https://images.unsplash.com/photo-1532012197267-da84d127e765?w=300&h=400&fit=crop"}
+        ];
+
+        let cart = [];
+
+        function renderBooks() {
+            document.getElementById('booksGrid').innerHTML = books.map(b => `
+                <div class="book-card">
+                    <img src="${b.image}" alt="${b.title}" class="book-image">
+                    <div class="book-info">
+                        <div class="book-title">${b.title}</div>
+                        <div class="book-author">${b.author}</div>
+                        <div class="book-price">${b.price.toLocaleString()} so'm ${b.oldPrice ? `<span class="old-price">${b.oldPrice.toLocaleString()}</span>` : ''}</div>
+                        <button class="add-btn" onclick="addToCart(${b.id})">Savatga qo'shish</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function addToCart(bookId) {
+            cart.push({...books.find(b => b.id === bookId), cartId: Date.now()});
+            updateCart();
+            tg.HapticFeedback.notificationOccurred('success');
+        }
+
+        function removeFromCart(cartId) {
+            cart = cart.filter(i => i.cartId !== cartId);
+            updateCart();
+        }
+
+        function updateCart() {
+            const btn = document.getElementById('cartBtn');
+            if (cart.length > 0) {
+                btn.style.display = 'flex';
+                document.getElementById('cartCount').textContent = cart.length;
+            } else {
+                btn.style.display = 'none';
+            }
+        }
+
+        function showCart() {
+            const modal = document.getElementById('cartModal');
+            const items = document.getElementById('cartItems');
+            const total = document.getElementById('cartTotal');
+            const form = document.getElementById('checkoutForm');
+            
+            modal.classList.add('active');
+            
+            if (cart.length === 0) {
+                items.innerHTML = '<div class="empty-cart">Savat bo\'sh</div>';
+                total.style.display = 'none';
+                form.style.display = 'none';
+            } else {
+                items.innerHTML = cart.map(i => `
+                    <div class="cart-item">
+                        <img src="${i.image}" class="cart-item-image">
+                        <div class="cart-item-info">
+                            <div class="cart-item-title">${i.title}</div>
+                            <div class="cart-item-price">${i.price.toLocaleString()} so'm</div>
+                        </div>
+                        <button class="remove-btn" onclick="removeFromCart(${i.cartId})">×</button>
+                    </div>
+                `).join('');
+                
+                const sum = cart.reduce((s, i) => s + i.price, 0);
+                document.getElementById('totalPrice').textContent = sum.toLocaleString() + ' so\'m';
+                total.style.display = 'flex';
+                form.style.display = 'block';
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('cartModal').classList.remove('active');
+        }
+
+        function submitOrder() {
+            const name = document.getElementById('nameInput').value.trim();
+            const phone = document.getElementById('phoneInput').value.trim();
+            
+            if (!name || !phone) {
+                tg.showAlert('Iltimos, barcha maydonlarni to\'ldiring!');
+                return;
+            }
+            
+            const details = cart.map(i => `${i.title} - ${i.price.toLocaleString()} so'm`).join('\n');
+            const sum = cart.reduce((s, i) => s + i.price, 0);
+            const msg = `🆕 YANGI BUYURTMA\n\n👤 Mijoz: ${name}\n📱 Telefon: ${phone}\n\n📚 Kitoblar:\n${details}\n\n💰 Jami: ${sum.toLocaleString()} so'm`;
+            
+            fetch(`https://api.telegram.org/bot8282646988:AAFiw9xVf96sg6JLtfZYL1ICwdYVbXlwjTM/sendMessage`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({chat_id: '8575478994', text: msg})
+            })
+            .then(r => r.json())
+            .then(d => {
+                if (d.ok) {
+                    document.getElementById('cartItems').innerHTML = '<div class="success-message"><div class="success-icon">✅</div><h3>Buyurtma qabul qilindi!</h3><p>Tez orada siz bilan bog\'lanamiz</p></div>';
+                    document.getElementById('cartTotal').style.display = 'none';
+                    document.getElementById('checkoutForm').style.display = 'none';
+                    cart = [];
+                    updateCart();
+                    setTimeout(() => { closeModal(); tg.close(); }, 2000);
+                } else {
+                    tg.showAlert('Xatolik yuz berdi. Qaytadan urinib ko\'ring.');
+                }
+            })
+            .catch(() => tg.showAlert('Xatolik yuz berdi.'));
+        }
+
+        document.getElementById('cartBtn').addEventListener('click', showCart);
+        document.getElementById('closeModalBtn').addEventListener('click', closeModal);
+        document.getElementById('submitBtn').addEventListener('click', submitOrder);
+        renderBooks();
+    </script>
+</body>
+</html>
